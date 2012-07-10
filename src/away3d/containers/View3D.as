@@ -1,6 +1,5 @@
 ﻿package away3d.containers
 {
-	import away3d.core.pick.PickingType;
 	import away3d.core.pick.IPicker;
 	import away3d.Away3D;
 	import away3d.arcane;
@@ -9,7 +8,6 @@
 	import away3d.core.managers.RTTBufferManager;
 	import away3d.core.managers.Stage3DManager;
 	import away3d.core.managers.Stage3DProxy;
-	import away3d.core.pick.RaycastPicker;
 	import away3d.core.render.DefaultRenderer;
 	import away3d.core.render.DepthRenderer;
 	import away3d.core.render.Filter3DRenderer;
@@ -23,6 +21,7 @@
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	import flash.geom.Transform;
 	import flash.geom.Vector3D;
 	import flash.net.URLRequest;
@@ -445,7 +444,7 @@
 			_localPos.x = value;
 			_globalPos.x = parent? parent.localToGlobal(_localPos).x : value;
 			
-			if (_stage3DProxy)
+			if (_stage3DProxy && !_shareContext)
 				_stage3DProxy.x = _globalPos.x;
 		}
 
@@ -456,7 +455,7 @@
 			_localPos.y = value;
 			_globalPos.y = parent? parent.localToGlobal(_localPos).y : value;
 			
-			if (_stage3DProxy)
+			if (_stage3DProxy && !_shareContext)
 				_stage3DProxy.y = _globalPos.y;
 		}
 		
@@ -464,7 +463,7 @@
 		{
 			super.visible = value;
 			
-			if (_stage3DProxy)
+			if (_stage3DProxy && !_shareContext)
 				_stage3DProxy.visible = value;
 		}
 
@@ -569,11 +568,6 @@
 			if (_backBufferInvalid)
 				updateBackBuffer();
 				
-			if (_shareContext) {
-				width = _stage3DProxy.width;
-				height = _stage3DProxy.height;
-			}
-
 			if (!_parentIsStage)
 				updateGlobalPos();
 
@@ -600,7 +594,12 @@
 				if (!_shareContext) _stage3DProxy._context3D.present();
 			} else {
 				_renderer.shareContext = _shareContext;
-				_renderer.render(_entityCollector);
+				if (_shareContext) {
+					_renderer.render(_entityCollector, null, new Rectangle(x, y, _width, _height));
+				} else {
+					_renderer.render(_entityCollector);
+				}
+				
 			}
 
 			// clean up data for this render
